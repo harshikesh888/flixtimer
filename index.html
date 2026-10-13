@@ -2,151 +2,162 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>VIDHIVE Theater — Top 250 Movies</title>
-<meta name="description" content="Browse the top 250 movies and play them via VIDHIVE movie embeds with themes, resume, and live Events API tracking." />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#245f8d" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>STREAMVERSE — Theater Terminal</title>
+<meta name="description" content="STREAMVERSE Theater Terminal — browse and watch the Top 250 movies in a clean, distraction-free player." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<header class="topbar">
-  <div class="wrap topbar-inner">
-    <div class="brand"><span class="brand-mark">VH</span><span>VIDHIVE <em>Theater</em></span></div>
-    <nav class="nav">
-      <a href="#browse">Top 250</a>
-      <a href="#player-section">Player</a>
-      <a href="#continue">Continue</a>
-      <a href="#events">Events API</a>
+<div id="boot">
+  <div class="logo-ring"><span class="logo-text">SV</span></div>
+  <div id="bootLines"></div>
+  <div id="bootFinal">THEATER READY</div>
+</div>
+<div class="bg-radial" id="bgRadial"></div>
+<div class="bg-grid" id="bgGrid"></div>
+<div class="scanline" id="scanline"></div>
+
+<div id="main">
+  <header class="topbar" id="topbar">
+    <div class="top-left">
+      <span class="brand">STREAMVERSE</span>
+      <span class="regime-chip"><span class="blink"></span> Theater Online</span>
+    </div>
+    <nav class="top-center">
+      <a class="region-btn" href="#player-panel">Now Playing</a>
+      <a class="region-btn" href="#continue-panel">Continue</a>
+      <a class="region-btn active" href="#browse-panel">Top 250</a>
     </nav>
-    <span class="pill">250 movies · fixed catalog</span>
+    <div class="top-right">
+      <span class="meta-pill">Titles <span class="v">250</span></span>
+      <span class="meta-pill">Quality <span class="v">HD</span></span>
+      <span class="alert-badge" id="nowBadge">Idle</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT RAIL -->
+    <div class="col" id="leftRail">
+      <section class="g-panel">
+        <div class="sec-head"><h3>Library</h3><span class="badge" id="libCount">250</span></div>
+        <div class="layer-item"><div class="layer-left"><span class="ldot air"></span><div><div class="layer-name">Catalog coverage</div><div class="layer-sub">Movies ready to play</div></div></div><span class="layer-count" id="statTotal">250</span></div>
+        <div class="layer-item"><div class="layer-left"><span class="ldot sdr"></span><div><div class="layer-name">Average rating</div><div class="layer-sub">Across all titles</div></div></div><span class="layer-count" id="statAvg">—</span></div>
+        <div class="layer-item"><div class="layer-left"><span class="ldot nuke"></span><div><div class="layer-name">Top rated</div><div class="layer-sub">Highest in catalog</div></div></div><span class="layer-count" id="statTop">—</span></div>
+        <div class="nuke-ok" id="resumeStat">No saved progress yet</div>
+        <button class="ghost-btn" id="clearProgress">Clear watch history</button>
+      </section>
+
+      <section class="g-panel">
+        <div class="sec-head"><h3>Playback</h3><span class="badge">Settings</span></div>
+        <label class="row-check"><input type="checkbox" id="optAutoPlay" checked /><span>Autoplay when I press play</span></label>
+        <label class="row-check"><input type="checkbox" id="optResume" checked /><span>Resume where I left off</span></label>
+        <label class="fld">Start at
+          <input id="optStart" type="number" min="0" placeholder="Auto — resumes automatically" />
+        </label>
+        <label class="fld">Source
+          <select id="optServer">
+            <option value="">Auto — best available</option>
+            <option value="cinevault" selected>Cinevault</option>
+          </select>
+        </label>
+        <input id="optServerCustom" type="hidden" value="" />
+        <input id="optTheme" type="hidden" value="00E5FF" />
+        <div class="fld-label">Player accent</div>
+        <div class="swatches" id="swatches">
+          <button data-theme="00E5FF" style="--c:#00E5FF" class="on" title="Neon">Neon</button>
+          <button data-theme="E5A93C" style="--c:#E5A93C" title="Gold">Gold</button>
+          <button data-theme="16A085" style="--c:#16A085" title="Green">Green</button>
+          <button data-theme="2980B9" style="--c:#2980B9" title="Blue">Blue</button>
+          <button data-theme="9B59B6" style="--c:#9B59B6" title="Purple">Purple</button>
+        </div>
+        <button id="applyOpts" class="primary-btn">Apply &amp; reload player</button>
+      </section>
+
+      <section class="g-panel">
+        <div class="sec-head"><h3>Quick Play</h3><span class="badge">ID</span></div>
+        <form id="quickPlay" class="quickplay">
+          <input id="qpId" inputmode="numeric" placeholder="Movie number — e.g. 278" required />
+          <button class="primary-btn" type="submit">Play</button>
+        </form>
+        <p class="hint">Try: <button class="link" data-play="278">Shawshank</button> · <button class="link" data-play="238">Godfather</button> · <button class="link" data-play="155">Dark Knight</button> · <button class="link" data-play="129">Spirited Away</button></p>
+        <div class="how">
+          <div class="econ-row"><span class="elabel">Pick a poster</span><span class="eval">Instant play</span></div>
+          <div class="econ-row"><span class="elabel">Leave &amp; return</span><span class="eval">Auto resume</span></div>
+          <div class="econ-row"><span class="elabel">Progress</span><span class="eval">Saved on device</span></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- CENTER -->
+    <div class="col" id="centerCol">
+      <section class="g-panel" id="player-panel">
+        <div class="sec-head"><h3>Now Playing</h3><span class="badge">HD Player</span></div>
+        <div class="now-head">
+          <h2 id="nowTitle">Pick a title below</h2>
+          <span id="nowMeta" class="pill">Idle</span>
+        </div>
+        <div class="player-shell">
+          <div class="ratio">
+            <iframe id="player" src="about:blank" title="Movie player" frameborder="0" allowfullscreen allow="encrypted-media; fullscreen; autoplay"></iframe>
+          </div>
+        </div>
+        <div class="stats">
+          <div class="stat"><label>Status</label><b id="stEvent">Idle</b></div>
+          <div class="stat"><label>Time</label><b><span id="stTime">0:00</span> / <span id="stDur">0:00</span></b></div>
+          <div class="stat grow"><label>Progress</label><div class="pbar"><div id="stBar"></div></div></div>
+          <div class="stat"><label>Sound</label><b id="stVol">—</b></div>
+        </div>
+        <div class="cmd-row">
+          <button id="btnRestart" class="ghost-btn">Restart from start</button>
+          <button id="btnResume" class="ghost-btn">Resume</button>
+        </div>
+      </section>
+
+      <section class="g-panel" id="browse-panel">
+        <div class="sec-head"><h3>Top 250 Movies</h3><span class="badge" id="browseCount">250 titles</span></div>
+        <div class="filters">
+          <input id="search" placeholder="Search title, year, or number…" autocomplete="off" enterkeyhint="search" />
+          <select id="sort" title="Sort order" aria-label="Sort order">
+            <option value="rank">Sort: Rank</option>
+            <option value="rating">Sort: Rating</option>
+            <option value="year-desc">Sort: Newest</option>
+            <option value="year-asc">Sort: Oldest</option>
+            <option value="az">Sort: A–Z</option>
+          </select>
+        </div>
+        <div id="grid" class="grid-cards"></div>
+      </section>
+    </div>
+
+    <!-- RIGHT RAIL -->
+    <div class="col" id="rightRail">
+      <section class="g-panel" id="continue-panel">
+        <div class="sec-head"><h3>Continue Watching</h3><span class="badge" id="continueCount">0</span></div>
+        <div id="continueRow" class="feed"><p class="hint">Nothing here yet. Play something and your place is saved automatically.</p></div>
+      </section>
+
+      <section class="g-panel">
+        <div class="sec-head"><h3>Top Rated</h3><span class="badge">Top 5</span></div>
+        <div id="topRated" class="feed small"></div>
+      </section>
+
+      <section class="g-panel">
+        <div class="sec-head"><h3>Activity</h3><span class="badge">Live</span></div>
+        <div id="activity" class="feed small"><div class="ic"><div class="ic-t">Player ready. Choose a movie to start watching.</div></div></div>
+      </section>
+    </div>
   </div>
-</header>
 
-<main class="wrap">
-  <!-- HERO / QUICK PLAY -->
-  <section class="hero">
-    <div>
-      <h1>Play any of the <span class="accent">Top 250 movies</span> via VIDHIVE.</h1>
-      <p>Responsive 16:9 iframe, movie embeds only — <code>autoPlay</code>, <code>startTime</code> resume, <code>defaultServer</code>, <code>theme</code>, plus bi-directional <code>postMessage</code> tracking. Every card below maps to one fixed TMDB movie ID, so playback is deterministic.</p>
-      <form id="quickPlay" class="quickplay">
-        <input id="qpId" inputmode="numeric" placeholder="TMDB movie ID — e.g. 278" required />
-        <button class="btn primary" type="submit">▶ Play</button>
-      </form>
-      <p class="hint">Try: <button class="link" data-play="278">278 Shawshank</button> · <button class="link" data-play="238">238 Godfather</button> · <button class="link" data-play="155">155 Dark Knight</button> · <button class="link" data-play="129">129 Spirited Away</button></p>
-    </div>
-    <div class="hero-card">
-      <h3>Movie embed</h3>
-      <code>https://vidhive.lol/embed/movie/${id}</code>
-      <ul>
-        <li>✓ Responsive container (padding-bottom 56.25%)</li>
-        <li>✓ Resume from localStorage if <code>startTime</code> omitted</li>
-        <li>✓ Live <code>VIDHIVE_PLAYER_EVENT</code> log</li>
-        <li>✓ No TV endpoints — movies only</li>
-      </ul>
-    </div>
-  </section>
+  <footer class="foot">STREAMVERSE Theater · Top 250 movies · Your progress stays on this device.</footer>
+</div>
 
-  <!-- CONTINUE WATCHING -->
-  <section id="continue">
-    <div class="sec-head"><h2>Continue Watching</h2><button id="clearProgress" class="btn small ghost">Clear all</button></div>
-    <div id="continueRow" class="rail"><p class="hint">No saved progress yet. Play something — <code>VIDHIVE_MEDIA_DATA</code> snapshots are stored locally.</p></div>
-  </section>
-
-  <!-- PLAYER -->
-  <section id="player-section" class="player-grid">
-    <div class="player-main">
-      <div class="sec-head"><h2 id="nowTitle">Player — pick a title below</h2><span id="nowMeta" class="pill">idle</span></div>
-      <!-- 16:9 Aspect Ratio Container (per docs) -->
-      <div class="ratio">
-        <iframe id="player" src="about:blank" title="VIDHIVE player"
-          frameborder="0" allowfullscreen allow="encrypted-media; fullscreen; autoplay"></iframe>
-      </div>
-      <div class="embed-bar">
-        <code id="embedUrl" class="url">—</code>
-        <button id="copyUrl" class="btn small">Copy URL</button>
-        <button id="openUrl" class="btn small ghost">Open ↗</button>
-      </div>
-      <!-- Live status -->
-      <div class="stats">
-        <div class="stat"><label>Status</label><b id="stEvent">—</b></div>
-        <div class="stat"><label>Time</label><b><span id="stTime">0:00</span> / <span id="stDur">0:00</span></b></div>
-        <div class="stat grow"><label>Progress</label><div class="pbar"><div id="stBar"></div></div></div>
-        <div class="stat"><label>Vol / Mute</label><b id="stVol">—</b></div>
-      </div>
-      <div class="cmd-row">
-        <button id="btnStatus" class="btn small">getStatus</button>
-        <button id="btnMedia" class="btn small">getMediaData</button>
-        <button id="btnCopyEntry" class="btn small ghost">Copy saved entry JSON</button>
-      </div>
-      <pre id="payload" class="payload">// VIDHIVE_MEDIA_DATA entry will appear here — this is the canonical payload to save in your backend.
-{}</pre>
-    </div>
-
-    <aside class="panel">
-      <h3>Playback options</h3>
-      <label class="chk"><input type="checkbox" id="optAutoPlay" checked /> autoPlay</label>
-      <label>Start time (sec, blank = resume)
-        <input id="optStart" type="number" min="0" placeholder="auto-resume" />
-      </label>
-      <label>Server
-        <select id="optServer">
-          <option value="">Auto (loop order)</option>
-          <option value="cinevault" selected>cinevault</option>
-        </select>
-      </label>
-      <label>Custom server <small>(overrides select)</small>
-        <input id="optServerCustom" placeholder="e.g. cinevault" />
-      </label>
-      <label>Theme</label>
-      <div class="swatches" id="swatches">
-        <button data-theme="00E5FF" style="--c:#00E5FF" class="on" title="Neon cyan (default)">Neon</button>
-        <button data-theme="E5A93C" style="--c:#E5A93C" title="Gold">Gold</button>
-        <button data-theme="16A085" style="--c:#16A085" title="Green">Green</button>
-        <button data-theme="2980B9" style="--c:#2980B9" title="Blue">Blue</button>
-        <button data-theme="9B59B6" style="--c:#9B59B6" title="Purple">Purple</button>
-      </div>
-      <label>Custom hex <input id="optTheme" maxlength="6" value="00E5FF" placeholder="00E5FF" /></label>
-      <button id="applyOpts" class="btn primary full">Reload player with options</button>
-
-      <h3>Embed code</h3>
-      <div class="tabs">
-        <button data-tab="html" class="on">HTML</button>
-        <button data-tab="react">React</button>
-        <button data-tab="tailwind">Tailwind</button>
-      </div>
-      <pre id="snippet" class="payload small"></pre>
-      <button id="copySnippet" class="btn small full">Copy snippet</button>
-
-      <h3 id="events">Event log</h3>
-      <ul id="log" class="log"><li class="hint">Listening for <code>VIDHIVE_PLAYER_EVENT</code>…</li></ul>
-    </aside>
-  </section>
-
-  <!-- BROWSE -->
-  <section id="browse">
-    <div class="sec-head">
-      <h2>Top 250 Movies</h2>
-      <div class="filters">
-        <input id="search" placeholder="Filter by title…" />
-        <select id="sort" title="Sort order">
-          <option value="rank">Sort: Rank</option>
-          <option value="rating">Sort: Rating</option>
-          <option value="year-desc">Sort: Newest</option>
-          <option value="year-asc">Sort: Oldest</option>
-          <option value="az">Sort: A–Z</option>
-        </select>
-      </div>
-    </div>
-    <div id="grid" class="grid"></div>
-  </section>
-
-  <section class="docs">
-    <div><h3>Movie endpoint</h3><code>https://vidhive.lol/embed/movie/${id}</code><p>Optional params: <code>autoPlay</code>, <code>startTime</code> (sec, falls back to saved progress), <code>defaultServer</code>, <code>theme</code> (hex).</p></div>
-    <div><h3>Events API</h3><p><code>play · pause · seeked · ended · timeupdate · playerstatus</code> via <code>VIDHIVE_PLAYER_EVENT</code>; canonical save payload via <code>VIDHIVE_MEDIA_DATA</code>. Commands: <code>getStatus</code>, <code>getMediaData</code>.</p></div>
-    <div><h3>Backend</h3><p>This demo persists the full <code>entry</code> object to <code>localStorage</code> (mirrors the Express <code>/api/player-progress</code> upsert in the docs). Swap <code>saveEntry()</code> in <code>app.js</code> for a <code>fetch POST</code>.</p></div>
-  </section>
-</main>
-
-<footer><div class="wrap">VIDHIVE Theater · Top 250 movies · Player origin: <code>https://vidhive.lol</code> · Ratings shown are IMDb-style catalog data.</div></footer>
 <script src="movies.js"></script>
 <script src="app.js"></script>
 </body>

@@ -1,6 +1,5 @@
-// Generated Top-250 catalog: rank/title/year/rating + verified TMDB movie id/poster.
-// Do not hand-edit. Source: /tmp/opencode/movies_resolved.json
-window.VIDHIVE_TOP250 = [
+// Fixed Top-250 catalog. Exposed as STREAMVERSE_TOP250 (legacy VIDHIVE_TOP250 alias kept).
+window.STREAMVERSE_TOP250 = [
   {rank:1,title:"The Shawshank Redemption",year:1994,rating:9.3,id:278,poster:"/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg"},
   {rank:2,title:"The Godfather",year:1972,rating:9.2,id:238,poster:"/3bhkrj58Vtu7enYsRolD1fZdja1.jpg"},
   {rank:3,title:"The Dark Knight",year:2008,rating:9.1,id:155,poster:"/qJ2tW6WMUDux911r6m7haRef0WH.jpg"},
@@ -252,3 +251,4 @@ window.VIDHIVE_TOP250 = [
   {rank:249,title:"Drishyam (2015)",year:2015,rating:8.2,id:352173,poster:"/gIClWRv5OSe8rl5Koi0AeUcCZ9Z.jpg"},
   {rank:250,title:"Drishyam (2013)",year:2013,rating:8.4,id:244049,poster:"/gPBldHTnqpgsrnDnSrAlFwE6Q1t.jpg"},
 ];
+window.VIDHIVE_TOP250 = window.STREAMVERSE_TOP250; // legacy alias

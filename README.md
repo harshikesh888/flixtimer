@@ -1,6 +1,6 @@
-# VIDHIVE Theater — Top 250 Movies
+# STREAMVERSE Theater — Top 250 Movies
 
-Static movies-only streaming site built on the VIDHIVE docs. No build step — open `index.html` or serve the folder. No TV endpoints: every card maps to one fixed TMDB **movie** ID, so playback is deterministic (no random fallback titles).
+Static movies-only streaming site. No build step — open `index.html` or serve the folder. No TV endpoints: every card maps to one fixed TMDB **movie** ID, so playback is deterministic (no random fallback titles).
 
 ## Run
 
