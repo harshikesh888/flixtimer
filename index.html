@@ -11,6 +11,7 @@
 <meta name="description" content="STREAMVERSE Theater Terminal — browse and watch the Top 250 movies in a clean, distraction-free player." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://image.tmdb.org" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="styles.css" />
 </head>
@@ -148,6 +149,23 @@
           </select>
         </div>
         <div id="grid" class="grid-cards"></div>
+        <nav class="pager" id="pager" aria-label="Movie pages">
+          <div class="pager-row">
+            <button id="prevPage" class="ghost-btn pager-btn" type="button">‹ Prev</button>
+            <div id="pageNums" class="page-nums"></div>
+            <button id="nextPage" class="ghost-btn pager-btn" type="button">Next ›</button>
+          </div>
+          <div class="pager-meta">
+            <span id="pageInfo" class="hint"></span>
+            <label class="per-page">Per page
+              <select id="perPage" aria-label="Movies per page">
+                <option value="12">12</option>
+                <option value="24" selected>24</option>
+                <option value="48">48</option>
+              </select>
+            </label>
+          </div>
+        </nav>
       </section>
     </div>
 

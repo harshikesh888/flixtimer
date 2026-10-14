@@ -4,7 +4,8 @@ const iframe = $("#player");
 const BASE = "https://vidhive.lol"; // player backend origin (protocol unchanged)
 const LS_PROGRESS = "streamverse_progress_movies_v1";
 const LS_PROGRESS_LEGACY = "vidhive_progress_movies_v1";
-const IMG = "https://image.tmdb.org/t/p/w500";
+const IMG = "https://image.tmdb.org/t/p/w185";
+const IMG_TINY = "https://image.tmdb.org/t/p/w92";
 
 /* one-time migration so existing watch history carries over after the rename */
 try {
@@ -18,7 +19,8 @@ const MOVIES = Array.isArray(window.STREAMVERSE_TOP250)
   : (Array.isArray(window.VIDHIVE_TOP250) ? window.VIDHIVE_TOP250 : []);
 const byId = new Map(MOVIES.map((m) => [m.id, m]));
 
-let current = { id: 278, title: "The Shawshank Redemption" };
+let current = { id: null, title: "" };
+let hasPicked = false;
 
 const store = {
   all() { try { return JSON.parse(localStorage.getItem(LS_PROGRESS) || "{}"); } catch { return {}; } },
@@ -80,7 +82,7 @@ function activity(html) {
   div.className = "ic";
   div.innerHTML = html;
   feed.prepend(div);
-  while (feed.children.length > 30) feed.lastChild.remove();
+  while (feed.children.length > 15) feed.lastChild.remove();
 }
 
 function activityMsg(title, sub) {
@@ -91,6 +93,8 @@ function activityMsg(title, sub) {
 function esc(s) { return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
 
 function load(media, { scroll = true, startOverride = undefined } = {}) {
+  if (!media || !media.id) return;
+  hasPicked = true;
   current = { ...media };
   const o = opts();
   if (startOverride !== undefined) o.startTime = startOverride;
@@ -189,7 +193,7 @@ const FALLBACK_ART_WRAP = `<span class="art">${FALLBACK_ART}</span>`;
 function card(m) {
   const pct = progressPct(m.id);
   const poster = m.poster
-    ? `<img loading="lazy" src="${IMG}${m.poster}" alt="${esc(m.title)}" onerror="this.outerHTML=FALLBACK_ART" />`
+    ? `<img loading="lazy" decoding="async" width="185" height="278" src="${IMG}${m.poster}" alt="${esc(m.title)}" onerror="this.outerHTML=FALLBACK_ART" />`
     : FALLBACK_ART;
   return `<article class="card" data-id="${m.id}">
     <div class="poster"><span class="rank">#${m.rank}</span>${poster}</div>
@@ -226,15 +230,90 @@ function filtered() {
   return list.sort(by);
 }
 
+/* ---------- pagination (keeps DOM small so phones don't lag) ---------- */
+function getDefaultPageSize() {
+  try { return window.innerWidth < 640 ? 12 : 24; } catch { return 24; }
+}
+let page = 1;
+let pageSize = getDefaultPageSize();
+
+function totalPages(total) {
+  return Math.max(1, Math.ceil(total / pageSize));
+}
+
+function goToPage(n, scroll = true) {
+  const total = filtered().length;
+  const max = totalPages(total);
+  page = Math.min(Math.max(1, n | 0 || 1), max);
+  renderGrid();
+  if (scroll) $("#browse-panel")?.scrollIntoView({ behavior: "auto", block: "start" });
+}
+
+function renderPager(total) {
+  const pager = $("#pager");
+  if (!pager) return;
+  const max = totalPages(total);
+  if (page > max) page = max;
+  pager.style.display = total ? "" : "none";
+  const prev = $("#prevPage"), next = $("#nextPage");
+  if (prev) prev.disabled = page <= 1;
+  if (next) next.disabled = page >= max;
+
+  const nums = $("#pageNums");
+  if (nums) {
+    // Compact window: max 5 number buttons, phone-friendly.
+    let start = Math.max(1, Math.min(page - 2, max - 4));
+    let end = Math.min(max, start + 4);
+    start = Math.max(1, end - 4);
+    let html = "";
+    if (start > 1) {
+      html += `<button class="page-btn" data-pg="1" type="button">1</button>`;
+      if (start > 2) html += `<span class="page-dots">…</span>`;
+    }
+    for (let i = start; i <= end; i++) {
+      html += `<button class="page-btn${i === page ? " on" : ""}" data-pg="${i}" type="button" ${i === page ? 'aria-current="page"' : ""}>${i}</button>`;
+    }
+    if (end < max) {
+      if (end < max - 1) html += `<span class="page-dots">…</span>`;
+      html += `<button class="page-btn" data-pg="${max}" type="button">${max}</button>`;
+    }
+    nums.innerHTML = html;
+  }
+  const info = $("#pageInfo");
+  if (info) {
+    if (!total) info.textContent = "";
+    else {
+      const a = (page - 1) * pageSize + 1;
+      const b = Math.min(total, page * pageSize);
+      info.textContent = `Showing ${a}–${b} of ${total} · Page ${page}/${max}`;
+    }
+  }
+}
+
 function renderGrid() {
   const gridEl = $("#grid");
   if (!gridEl) return;
   const list = filtered();
-  gridEl.innerHTML = list.length ? list.map(card).join("")
+  const max = totalPages(list.length);
+  if (page > max) page = max;
+  if (page < 1) page = 1;
+  const slice = list.slice((page - 1) * pageSize, page * pageSize);
+  gridEl.innerHTML = list.length ? slice.map(card).join("")
     : `<p class="hint">No matches. Try a different title or year.</p>`;
   const bc = $("#browseCount");
   if (bc) bc.textContent = `${list.length} title${list.length === 1 ? "" : "s"}`;
   document.querySelectorAll("#grid .card").forEach((c) => c.classList.toggle("active", +c.dataset.id === +current.id));
+  renderPager(list.length);
+}
+
+function resetPageAndRender() {
+  page = 1;
+  renderGrid();
+}
+
+function debounce(fn, ms) {
+  let t = 0;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
 function renderContinue() {
@@ -251,9 +330,9 @@ function renderContinue() {
       const known = byId.get(e.id);
       const title = e.title || known?.title || "Movie";
       const posterPath = e.poster || known?.poster || "";
-      const src = posterPath ? (posterPath.startsWith("http") ? posterPath : IMG + posterPath) : "";
+      const src = posterPath ? (posterPath.startsWith("http") ? posterPath : IMG_TINY + posterPath) : "";
       const thumb = src
-        ? `<img loading="lazy" src="${src}" onerror="this.outerHTML=FALLBACK_ART_WRAP" alt=""/>`
+        ? `<img loading="lazy" decoding="async" width="92" height="138" src="${src}" onerror="this.outerHTML=FALLBACK_ART_WRAP" alt=""/>`
         : FALLBACK_ART_WRAP;
       return `<div class="mini-card" data-id="${e.id}">
         ${thumb}
@@ -269,7 +348,7 @@ function renderTopRated() {
   const top = [...MOVIES].sort((a, b) => b.rating - a.rating || a.rank - b.rank).slice(0, 5);
   host.innerHTML = top.map((m) => `
     <div class="mini-card" data-id="${m.id}">
-      <img loading="lazy" src="${IMG}${m.poster}" onerror="this.outerHTML=FALLBACK_ART_WRAP" alt=""/>
+      <img loading="lazy" decoding="async" width="92" height="138" src="${IMG_TINY}${m.poster}" onerror="this.outerHTML=FALLBACK_ART_WRAP" alt=""/>
       <div><div class="t">${esc(m.title)}</div><div class="s">#${m.rank} · ★ ${m.rating.toFixed(1)} · ${m.year}</div></div>
       <span class="go">Play</span></div>`).join("");
 }
@@ -330,25 +409,47 @@ $("#quickPlay")?.addEventListener("submit", (e) => {
   q.value = "";
 });
 document.querySelectorAll("[data-play]").forEach((b) => b.addEventListener("click", () => playById(b.dataset.play)));
-$("#search")?.addEventListener("input", renderGrid);
-$("#sort")?.addEventListener("change", renderGrid);
-$("#minRating")?.addEventListener("change", renderGrid);
-$("#era")?.addEventListener("change", renderGrid);
+const debouncedSearch = debounce(resetPageAndRender, 180);
+$("#search")?.addEventListener("input", debouncedSearch);
+$("#sort")?.addEventListener("change", resetPageAndRender);
+$("#minRating")?.addEventListener("change", resetPageAndRender);
+$("#era")?.addEventListener("change", resetPageAndRender);
+$("#prevPage")?.addEventListener("click", () => goToPage(page - 1));
+$("#nextPage")?.addEventListener("click", () => goToPage(page + 1));
+$("#pageNums")?.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-pg]");
+  if (!b) return;
+  goToPage(parseInt(b.dataset.pg, 10));
+});
+$("#perPage")?.addEventListener("change", (e) => {
+  const v = parseInt(e.target.value, 10);
+  if (Number.isFinite(v) && v > 0) {
+    pageSize = Math.min(48, Math.max(6, v));
+    page = 1;
+    renderGrid();
+  }
+});
 $("#swatches")?.addEventListener("click", (e) => {
   const b = e.target.closest("[data-theme]");
   if (!b) return;
   document.querySelectorAll("#swatches button").forEach((x) => x.classList.remove("on"));
   b.classList.add("on");
   const ot = $("#optTheme"); if (ot) ot.value = b.dataset.theme;
+  if (!hasPicked || !current.id) return;
   load(current, { scroll: false });
 });
-$("#applyOpts")?.addEventListener("click", () => load(current, { scroll: false }));
+$("#applyOpts")?.addEventListener("click", () => {
+  if (!hasPicked || !current.id) { activityMsg("Pick a movie first", "Choose a poster below to start watching"); return; }
+  load(current, { scroll: false });
+});
 $("#btnRestart")?.addEventListener("click", () => {
+  if (!hasPicked || !current.id) { activityMsg("Pick a movie first", "Choose a poster below to start watching"); return; }
   const os = $("#optStart"); if (os) os.value = "0";
   load(current, { scroll: false });
   activityMsg("Restarted from the beginning", byId.get(current.id)?.title || "");
 });
 $("#btnResume")?.addEventListener("click", () => {
+  if (!hasPicked || !current.id) { activityMsg("Pick a movie first", "Choose a poster below to start watching"); return; }
   const os = $("#optStart"); if (os) os.value = "";
   const saved = store.get(current.id)?.progress?.watched;
   load(current, { scroll: false });
@@ -369,9 +470,17 @@ document.querySelectorAll(".top-center .region-btn").forEach((a) => {
 
 /* ---------- boot ---------- */
 function boot() {
-  const lines = ["Loading catalog — 250 titles", "Connecting player", "Restoring watch history"];
   const box = $("#bootLines");
-  const bootEl = $("#boot"), mainEl = $("#main"), finalEl = $("#bootFinal");
+  const bootEl = $("#boot"), mainEl = $("#main");
+  const isPhone = (() => { try { return window.innerWidth < 640; } catch { return false; } })();
+  const reduceMotion = (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } })();
+  // Phones / reduced-motion: skip the animated boot entirely for instant paint.
+  if (isPhone || reduceMotion || !box) {
+    bootEl?.classList.add("done");
+    mainEl?.classList.add("show");
+    return;
+  }
+  const lines = ["Loading catalog — 250 titles", "Connecting player", "Restoring watch history"];
   // Failsafe: never trap the user on the boot screen. Force-show after 3s.
   setTimeout(() => { bootEl?.classList.add("done"); mainEl?.classList.add("show"); }, 3000);
   if (!box) { bootEl?.classList.add("done"); mainEl?.classList.add("show"); return; }
@@ -397,13 +506,22 @@ function boot() {
 /* ---------- init (each step isolated so one bad section can't blank the page) ---------- */
 (function init() {
   const step = (fn) => { try { fn(); } catch (err) { console.error(err); } };
+  step(() => {
+    // Sync the per-page dropdown with the device-appropriate default (12 on phones, 24 desktop).
+    const sel = $("#perPage");
+    if (sel) sel.value = String(pageSize);
+  });
   step(renderStats);
   step(renderContinue);
   step(renderTopRated);
   step(renderGrid);
   step(boot);
   step(() => {
-    const first = byId.get(278) || MOVIES[0] || current;
-    load({ id: first.id ?? 278, title: first.title || "Movie" }, { scroll: false });
+    // Idle on open: never auto-load the player. It starts only when a poster is clicked.
+    if (iframe) iframe.src = "about:blank";
+    const nt = $("#nowTitle"); if (nt) nt.textContent = "Pick a title below";
+    const nm = $("#nowMeta"); if (nm) nm.textContent = "Idle";
+    const badge = $("#nowBadge"); if (badge) badge.textContent = "Idle";
+    const se = $("#stEvent"); if (se) se.textContent = "Idle";
   });
 })();
