@@ -166,11 +166,31 @@ function progressPct(id) {
   return Math.min(100, (saved.progress.watched / saved.progress.duration) * 100);
 }
 
+/* Flat-design fallback artwork (no gradients, solid shapes only) for titles without a poster. */
+const FALLBACK_ART = `<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Movie artwork">
+<rect width="200" height="300" fill="#0A2533"/>
+<circle cx="170" cy="40" r="46" fill="#123C52"/>
+<circle cx="20" cy="262" r="34" fill="#123C52"/>
+<circle cx="100" cy="128" r="68" fill="#00BFFF"/>
+<circle cx="100" cy="88" r="14" fill="#0A2533"/>
+<circle cx="140" cy="128" r="14" fill="#0A2533"/>
+<circle cx="100" cy="168" r="14" fill="#0A2533"/>
+<circle cx="60" cy="128" r="14" fill="#0A2533"/>
+<circle cx="100" cy="128" r="13" fill="#FFFFFF"/>
+<rect x="0" y="232" width="200" height="40" fill="#123C52"/>
+<rect x="14" y="242" width="20" height="20" fill="#FFFFFF"/>
+<rect x="46" y="242" width="20" height="20" fill="#FFFFFF"/>
+<rect x="78" y="242" width="20" height="20" fill="#FFFFFF"/>
+<rect x="110" y="242" width="20" height="20" fill="#FFFFFF"/>
+<rect x="142" y="242" width="20" height="20" fill="#FFFFFF"/>
+</svg>`;
+const FALLBACK_ART_WRAP = `<span class="art">${FALLBACK_ART}</span>`;
+
 function card(m) {
   const pct = progressPct(m.id);
   const poster = m.poster
-    ? `<img loading="lazy" src="${IMG}${m.poster}" alt="${esc(m.title)}" onerror="this.remove()" />`
-    : `<span>${esc((m.title || "?").slice(0, 1))}</span>`;
+    ? `<img loading="lazy" src="${IMG}${m.poster}" alt="${esc(m.title)}" onerror="this.outerHTML=FALLBACK_ART" />`
+    : FALLBACK_ART;
   return `<article class="card" data-id="${m.id}">
     <div class="poster"><span class="rank">#${m.rank}</span>${poster}</div>
     <div class="card-body"><h4>${esc(m.title)}</h4>
@@ -182,9 +202,20 @@ function card(m) {
 
 function filtered() {
   const searchEl = $("#search"), sortEl = $("#sort");
+  const rateEl = $("#minRating"), eraEl = $("#era");
   const q = searchEl ? searchEl.value.trim().toLowerCase() : "";
   const sort = sortEl ? sortEl.value : "rank";
-  let list = MOVIES.filter((m) => !q || m.title.toLowerCase().includes(q) || String(m.id) === q || String(m.year) === q);
+  const minR = rateEl ? (parseFloat(rateEl.value) || 0) : 0;
+  const era = eraEl ? eraEl.value : "all";
+  const inEra = (y) => {
+    if (era === "all") return true;
+    if (era === "classic") return y < 1980;
+    const start = parseInt(era, 10);
+    return y >= start && y < start + 10;
+  };
+  let list = MOVIES.filter((m) =>
+    (!q || m.title.toLowerCase().includes(q) || String(m.id) === q || String(m.year) === q) &&
+    (m.rating >= minR) && inEra(m.year));
   const by = {
     "rank": (a, b) => a.rank - b.rank,
     "rating": (a, b) => b.rating - a.rating || a.rank - b.rank,
@@ -221,8 +252,11 @@ function renderContinue() {
       const title = e.title || known?.title || "Movie";
       const posterPath = e.poster || known?.poster || "";
       const src = posterPath ? (posterPath.startsWith("http") ? posterPath : IMG + posterPath) : "";
+      const thumb = src
+        ? `<img loading="lazy" src="${src}" onerror="this.outerHTML=FALLBACK_ART_WRAP" alt=""/>`
+        : FALLBACK_ART_WRAP;
       return `<div class="mini-card" data-id="${e.id}">
-        ${src ? `<img loading="lazy" src="${src}" onerror="this.remove()" alt=""/>` : ""}
+        ${thumb}
         <div><div class="t">${esc(title)}</div><div class="s">Left off at ${fmt(e.progress?.watched)} · ${pct.toFixed(0)}% watched</div></div>
         <span class="go">Resume</span></div>`;
     }).join("");
@@ -235,7 +269,7 @@ function renderTopRated() {
   const top = [...MOVIES].sort((a, b) => b.rating - a.rating || a.rank - b.rank).slice(0, 5);
   host.innerHTML = top.map((m) => `
     <div class="mini-card" data-id="${m.id}">
-      <img loading="lazy" src="${IMG}${m.poster}" onerror="this.remove()" alt=""/>
+      <img loading="lazy" src="${IMG}${m.poster}" onerror="this.outerHTML=FALLBACK_ART_WRAP" alt=""/>
       <div><div class="t">${esc(m.title)}</div><div class="s">#${m.rank} · ★ ${m.rating.toFixed(1)} · ${m.year}</div></div>
       <span class="go">Play</span></div>`).join("");
 }
@@ -298,6 +332,8 @@ $("#quickPlay")?.addEventListener("submit", (e) => {
 document.querySelectorAll("[data-play]").forEach((b) => b.addEventListener("click", () => playById(b.dataset.play)));
 $("#search")?.addEventListener("input", renderGrid);
 $("#sort")?.addEventListener("change", renderGrid);
+$("#minRating")?.addEventListener("change", renderGrid);
+$("#era")?.addEventListener("change", renderGrid);
 $("#swatches")?.addEventListener("click", (e) => {
   const b = e.target.closest("[data-theme]");
   if (!b) return;
